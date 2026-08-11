@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "93529948514",
+    "project_id": "the-happy-car-project",
+    "storage_bucket": "the-happy-car-project.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:93529948514:android:7344008e4b282cd9a1ac3b",
+        "android_client_info": {
+          "package_name": "com.example.flutter_nodjs_10"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCqIWW_sGG-x7FTaqjyZvauGfVfFTcUyUo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:93529948514:android:227608be0344dc3fa1ac3b",
+        "android_client_info": {
+          "package_name": "com.example.flutter_travel_10"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCqIWW_sGG-x7FTaqjyZvauGfVfFTcUyUo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
