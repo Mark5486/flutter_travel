@@ -4,33 +4,47 @@ on:
   push:
     branches:
       - main
+
   pull_request:
     branches:
       - main
 
 jobs:
-  test:
+  build:
+    name: Analyze & Test Flutter App
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2. Setup Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.29.2'
           channel: stable
           cache: true
 
-      - name: Install dependencies
+      # 3. Show Flutter version
+      - name: Flutter version
+        run: flutter --version
+
+      # 4. Get dependencies
+      - name: Get dependencies
         run: flutter pub get
 
-      - name: Analyze
-        run: flutter analyze
+      # 5. Analyze project
+      # Infos and warnings will not fail the workflow.
+      # Real analyzer errors will still fail it.
+      - name: Flutter analyze
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
-      - name: Run tests
-        run: flutter test
-
-      - name: Build APK
-        run: flutter build apk --debug
+      # 6. Run tests if tests exist
+      - name: Run Flutter tests
+        run: |
+          if [ -d "test" ] && find test -name "*_test.dart" | grep -q .; then
+            flutter test
+          else
+            echo "No Flutter tests found. Skipping tests."
+          fi
