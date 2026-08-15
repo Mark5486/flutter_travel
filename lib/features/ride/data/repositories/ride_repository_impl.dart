@@ -4,11 +4,9 @@ import 'package:dartz/dartz.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/errors/firebase_error_handler.dart';
-
 import '../../domain/entities/ride.dart';
 import '../../domain/entities/ride_location.dart';
 import '../../domain/repositories/ride_repository.dart';
-
 import '../datasources/ride_remote_data_source.dart';
 
 class RideRepositoryImpl with FirebaseErrorHandler implements RideRepository {
@@ -68,7 +66,6 @@ class RideRepositoryImpl with FirebaseErrorHandler implements RideRepository {
         driverName: driverName,
         driverPhone: driverPhone,
       );
-
       return unit;
     });
   }
@@ -80,7 +77,6 @@ class RideRepositoryImpl with FirebaseErrorHandler implements RideRepository {
   }) {
     return executeSafely(() async {
       await remoteDataSource.rejectRide(rideId: rideId, driverId: driverId);
-
       return unit;
     });
   }
@@ -89,7 +85,6 @@ class RideRepositoryImpl with FirebaseErrorHandler implements RideRepository {
   Future<Either<Failure, Unit>> driverArrived(String rideId) {
     return executeSafely(() async {
       await remoteDataSource.driverArrived(rideId);
-
       return unit;
     });
   }
@@ -98,7 +93,6 @@ class RideRepositoryImpl with FirebaseErrorHandler implements RideRepository {
   Future<Either<Failure, Unit>> startTrip(String rideId) {
     return executeSafely(() async {
       await remoteDataSource.startTrip(rideId);
-
       return unit;
     });
   }
@@ -107,7 +101,6 @@ class RideRepositoryImpl with FirebaseErrorHandler implements RideRepository {
   Future<Either<Failure, Unit>> completeRide(String rideId) {
     return executeSafely(() async {
       await remoteDataSource.completeRide(rideId);
-
       return unit;
     });
   }
@@ -116,7 +109,6 @@ class RideRepositoryImpl with FirebaseErrorHandler implements RideRepository {
   Future<Either<Failure, Unit>> cancelRide(String rideId) {
     return executeSafely(() async {
       await remoteDataSource.cancelRide(rideId);
-
       return unit;
     });
   }
@@ -137,7 +129,6 @@ class RideRepositoryImpl with FirebaseErrorHandler implements RideRepository {
         lat: lat,
         lng: lng,
       );
-
       return unit;
     });
   }
@@ -154,7 +145,6 @@ class RideRepositoryImpl with FirebaseErrorHandler implements RideRepository {
         lat: lat,
         lng: lng,
       );
-
       return unit;
     });
   }
@@ -172,8 +162,8 @@ class RideRepositoryImpl with FirebaseErrorHandler implements RideRepository {
       yield Left(
         ServerFailure(e.message ?? 'حدث خطأ أثناء الاتصال بقاعدة البيانات.'),
       );
-    } catch (e) {
-      yield Left(ServerFailure(e.toString()));
+    } catch (_) {
+      yield const Left(ServerFailure('حدث خطأ غير متوقع.'));
     }
   }
 }

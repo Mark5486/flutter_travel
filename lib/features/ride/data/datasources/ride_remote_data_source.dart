@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:rxdart/rxdart.dart';
 
 import '../../../../core/constants/firestore_collections.dart';
 import '../../../../core/errors/exceptions.dart';
@@ -91,64 +92,43 @@ class RideRemoteDataSourceImpl implements RideRemoteDataSource {
     );
 
     final docRef = await _rides.add(model.toFirestore());
-
     final snapshot = await docRef.get();
 
     return RideModel.fromFirestore(snapshot);
   }
 
   @override
-  Stream<Ride?> watchRide(String rideId) async* {
-    await for (final snapshot in _rides.doc(rideId).snapshots()) {
+  Stream<Ride?> watchRide(String rideId) {
+    return _rides.doc(rideId).snapshots().switchMap((snapshot) {
       if (!snapshot.exists) {
-        yield null;
-        continue;
+        return Stream.value(null);
       }
 
       final ride = RideModel.fromFirestore(snapshot);
 
-      if (ride.driverId == null) {
-        yield ride;
-        continue;
+      if (ride.driverId == null || ride.driverId!.isEmpty) {
+        return Stream.value(ride);
       }
 
-      final driverSnapshot = await _drivers.doc(ride.driverId).get();
+      return _drivers.doc(ride.driverId).snapshots().map((driverSnapshot) {
+        if (!driverSnapshot.exists) return ride;
 
-      if (!driverSnapshot.exists) {
-        yield ride;
-        continue;
-      }
+        final driverData = driverSnapshot.data();
+        final lat = (driverData?['lat'] as num?)?.toDouble();
+        final lng = (driverData?['lng'] as num?)?.toDouble();
 
-      final driverData = driverSnapshot.data();
+        if (lat == null || lng == null) return ride;
 
-      final lat = (driverData?['lat'] as num?)?.toDouble();
-      final lng = (driverData?['lng'] as num?)?.toDouble();
-
-      if (lat == null || lng == null) {
-        yield ride;
-        continue;
-      }
-
-      yield RideModel(
-        id: ride.id,
-        riderId: ride.riderId,
-        riderName: ride.riderName,
-        riderPhone: ride.riderPhone,
-        driverId: ride.driverId,
-        driverName: ride.driverName,
-        driverPhone: ride.driverPhone,
-        pickup: ride.pickup,
-        destination: ride.destination,
-        driverLocation: RideLocation(lat: lat, lng: lng, address: ''),
-        distanceKm: ride.distanceKm,
-        estimatedFare: ride.estimatedFare,
-        status: ride.status,
-        rejectedDriverIds: ride.rejectedDriverIds,
-        createdAt: ride.createdAt,
-        acceptedAt: ride.acceptedAt,
-        completedAt: ride.completedAt,
-      );
-    }
+        return ride.copyWith(
+              driverLocation: RideLocation(
+                lat: lat,
+                lng: lng,
+                address: ride.driverLocation?.address ?? '',
+              ),
+            )
+            as RideModel;
+      });
+    });
   }
 
   @override
@@ -166,7 +146,6 @@ class RideRemoteDataSourceImpl implements RideRemoteDataSource {
           rides.sort((a, b) {
             final aTime = a.createdAt ?? DateTime.now();
             final bTime = b.createdAt ?? DateTime.now();
-
             return aTime.compareTo(bTime);
           });
 
@@ -176,34 +155,25 @@ class RideRemoteDataSourceImpl implements RideRemoteDataSource {
 
   @override
   Stream<RideModel?> watchActiveRideForDriver(String driverId) {
-    const activeStatuses = [
-      RideStatus.accepted,
-      RideStatus.arrived,
-      RideStatus.onTrip,
-    ];
+    const activeStatuses = ['accepted', 'arrived', 'onTrip'];
 
-    return _rides.where('driverId', isEqualTo: driverId).snapshots().map((
-      snapshot,
-    ) {
-      final rides =
-          snapshot.docs
-              .map(RideModel.fromFirestore)
-              .where((ride) => activeStatuses.contains(ride.status))
-              .toList();
+    return _rides
+        .where('driverId', isEqualTo: driverId)
+        .where('status', whereIn: activeStatuses)
+        .snapshots()
+        .map((snapshot) {
+          if (snapshot.docs.isEmpty) return null;
 
-      if (rides.isEmpty) {
-        return null;
-      }
+          final rides = snapshot.docs.map(RideModel.fromFirestore).toList();
 
-      rides.sort((a, b) {
-        final aTime = a.acceptedAt ?? DateTime.now();
-        final bTime = b.acceptedAt ?? DateTime.now();
+          rides.sort((a, b) {
+            final aTime = a.acceptedAt ?? DateTime.now();
+            final bTime = b.acceptedAt ?? DateTime.now();
+            return aTime.compareTo(bTime);
+          });
 
-        return aTime.compareTo(bTime);
-      });
-
-      return rides.first;
-    });
+          return rides.first;
+        });
   }
 
   @override
@@ -222,7 +192,7 @@ class RideRemoteDataSourceImpl implements RideRemoteDataSource {
         throw const ServerException('الرحلة دي مش موجودة.');
       }
 
-      final currentStatus = RideStatusX.fromValue(snapshot.data()?['status']);
+      final currentStatus = RideStatus.fromValue(snapshot.data()?['status']);
 
       if (currentStatus != RideStatus.pending) {
         throw const ServerException('سواق تاني سبقك وقبل الرحلة دي.');
@@ -259,7 +229,7 @@ class RideRemoteDataSourceImpl implements RideRemoteDataSource {
         throw const ServerException('الرحلة مش موجودة.');
       }
 
-      final status = RideStatusX.fromValue(snapshot.data()?['status']);
+      final status = RideStatus.fromValue(snapshot.data()?['status']);
 
       if (status != RideStatus.accepted) {
         throw const ServerException('مينفعش تسجل وصولك دلوقتي.');
@@ -280,7 +250,7 @@ class RideRemoteDataSourceImpl implements RideRemoteDataSource {
         throw const ServerException('الرحلة مش موجودة.');
       }
 
-      final status = RideStatusX.fromValue(snapshot.data()?['status']);
+      final status = RideStatus.fromValue(snapshot.data()?['status']);
 
       if (status != RideStatus.arrived) {
         throw const ServerException('لازم تسجل وصولك الأول.');
@@ -301,7 +271,7 @@ class RideRemoteDataSourceImpl implements RideRemoteDataSource {
         throw const ServerException('الرحلة مش موجودة.');
       }
 
-      final status = RideStatusX.fromValue(snapshot.data()?['status']);
+      final status = RideStatus.fromValue(snapshot.data()?['status']);
 
       if (status != RideStatus.onTrip) {
         throw const ServerException('ابدأ الرحلة الأول قبل ما تنهيها.');

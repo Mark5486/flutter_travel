@@ -13,6 +13,7 @@ class AuthTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final VoidCallback? onTogglePassword;
   final bool isPassword;
+  final bool enabled;
 
   const AuthTextField({
     super.key,
@@ -24,21 +25,21 @@ class AuthTextField extends StatelessWidget {
     this.validator,
     this.onTogglePassword,
     this.isPassword = false,
+    this.enabled = true,
   });
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
+      enabled: enabled,
       keyboardType: keyboardType,
       obscureText: obscureText,
       validator: validator,
       style: AppTextStyles.bodyLarge,
       decoration: InputDecoration(
         hintText: hintText,
-
         prefixIcon: Icon(prefixIcon, color: AppColors.primary),
-
         suffixIcon:
             isPassword
                 ? IconButton(
@@ -50,25 +51,20 @@ class AuthTextField extends StatelessWidget {
                   ),
                 )
                 : null,
-
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSizes.paddingMedium,
           vertical: 18,
         ),
-
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
         ),
-
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
         ),
-
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
           borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
-
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSizes.borderRadiusMedium),
           borderSide: const BorderSide(color: AppColors.error),

@@ -65,10 +65,6 @@ class TripTrackingPanel extends StatelessWidget {
     }
   }
 
-  // ==========================================================
-  // PENDING
-  // ==========================================================
-
   Widget _pendingView() {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -120,10 +116,6 @@ class TripTrackingPanel extends StatelessWidget {
     );
   }
 
-  // ==========================================================
-  // ACCEPTED
-  // ==========================================================
-
   Widget _acceptedView() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -149,10 +141,6 @@ class TripTrackingPanel extends StatelessWidget {
     );
   }
 
-  // ==========================================================
-  // ARRIVED
-  // ==========================================================
-
   Widget _arrivedView() {
     return Column(
       children: [
@@ -172,10 +160,6 @@ class TripTrackingPanel extends StatelessWidget {
       ],
     );
   }
-
-  // ==========================================================
-  // ON TRIP
-  // ==========================================================
 
   Widget _onTripView() {
     return Column(
@@ -243,10 +227,6 @@ class TripTrackingPanel extends StatelessWidget {
     );
   }
 
-  // ==========================================================
-  // COMPLETED
-  // ==========================================================
-
   Widget _completedView() {
     return Column(
       children: [
@@ -270,10 +250,6 @@ class TripTrackingPanel extends StatelessWidget {
     );
   }
 
-  // ==========================================================
-  // CANCELLED
-  // ==========================================================
-
   Widget _cancelledView() {
     return Column(
       children: [
@@ -289,10 +265,6 @@ class TripTrackingPanel extends StatelessWidget {
       ],
     );
   }
-
-  // ==========================================================
-  // DRIVER INFO
-  // ==========================================================
 
   Widget _driverInfo() {
     return Container(
@@ -339,10 +311,6 @@ class TripTrackingPanel extends StatelessWidget {
     );
   }
 
-  // ==========================================================
-  // LOCATION
-  // ==========================================================
-
   Widget _locationInfo() {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -366,10 +334,6 @@ class TripTrackingPanel extends StatelessWidget {
       ],
     );
   }
-
-  // ==========================================================
-  // DONE
-  // ==========================================================
 
   Widget _doneButton() {
     return SizedBox(

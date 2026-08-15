@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../../core/constants/firestore_collections.dart';
+import '../../../../core/errors/exceptions.dart';
 import '../../../../core/services/firebase_service.dart';
 import '../../domain/entities/app_user.dart';
 import '../models/user_model.dart';
@@ -46,14 +47,20 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       password: password,
     );
 
+    final firebaseUser = credential.user;
+
+    if (firebaseUser == null) {
+      throw const AuthException('فشل إنشاء حساب المستخدم.');
+    }
+
     final user = UserModel(
-      uid: credential.user!.uid,
+      uid: firebaseUser.uid,
       name: name,
       email: email,
       phone: phone,
       role: role,
       imageUrl: null,
-      createdAt: null,
+      createdAt: DateTime.now(),
     );
 
     await users.doc(user.uid).set(user);
@@ -71,12 +78,18 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       password: password,
     );
 
-    final snapshot = await users.doc(credential.user!.uid).get();
+    final firebaseUser = credential.user;
+
+    if (firebaseUser == null) {
+      throw const AuthException('فشل تسجيل الدخول.');
+    }
+
+    final snapshot = await users.doc(firebaseUser.uid).get();
 
     final user = snapshot.data();
 
     if (user == null) {
-      throw Exception('User data not found.');
+      throw const ServerException('بيانات المستخدم غير موجودة.');
     }
 
     return user;
@@ -88,7 +101,13 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       return null;
     }
 
-    final snapshot = await users.doc(firebaseService.currentUserId!).get();
+    final uid = firebaseService.currentUserId;
+
+    if (uid == null || uid.isEmpty) {
+      return null;
+    }
+
+    final snapshot = await users.doc(uid).get();
 
     return snapshot.data();
   }

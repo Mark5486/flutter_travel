@@ -1,27 +1,14 @@
+import 'dart:io';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
-
 import '../errors/exceptions.dart';
 
 abstract class LocationService {
-  /// بيتأكد إن صلاحية الموقع متاحة ومفعلة، ولو لأ بيرمي [LocationException]
   Future<void> ensurePermissionGranted();
-
-  /// موقع الجهاز الحالي
   Future<Position> getCurrentPosition();
-
-  /// استماع مستمر لتحديثات الموقع (بيتستخدم وقت ما السواق يبقى Online)
   Stream<Position> watchPosition();
-
-  /// تحويل إحداثيات لعنوان نصي مقروء
   Future<String> getAddressFromCoordinates(double lat, double lng);
-
-  /// تحويل عنوان نصي لإحداثيات (بحث عن مكان)
-  Future<({double lat, double lng})?> getCoordinatesFromAddress(
-    String address,
-  );
-
-  /// المسافة بين نقطتين بالكيلومتر
+  Future<({double lat, double lng})?> getCoordinatesFromAddress(String address);
   double distanceInKm({
     required double startLat,
     required double startLng,
@@ -71,12 +58,31 @@ class LocationServiceImpl implements LocationService {
 
   @override
   Stream<Position> watchPosition() {
-    return Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
+    late LocationSettings locationSettings;
+
+    if (Platform.isAndroid) {
+      locationSettings = AndroidSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: 20,
-      ),
-    );
+        distanceFilter: 15, // تحديث كل 15 متر لتقليل استهلاك البطارية والـ Firebase
+        forceLocationManager: true,
+        intervalDuration: const Duration(seconds: 5),
+      );
+    } else if (Platform.isIOS) {
+      locationSettings = AppleSettings(
+        accuracy: LocationAccuracy.high,
+        activityType: ActivityType.automotiveNavigation, // تحسين الدقة للسائقين
+        distanceFilter: 15,
+        pauseLocationUpdatesAutomatically: false,
+        showBackgroundLocationIndicator: true,
+      );
+    } else {
+      locationSettings = const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 15,
+      );
+    }
+
+    return Geolocator.getPositionStream(locationSettings: locationSettings);
   }
 
   @override

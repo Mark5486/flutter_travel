@@ -49,48 +49,24 @@ class RideModel extends Ride {
 
     return RideModel(
       id: document.id,
-
       riderId: data['riderId'] as String? ?? '',
       riderName: data['riderName'] as String? ?? '',
       riderPhone: data['riderPhone'] as String? ?? '',
-
       driverId: data['driverId'] as String?,
       driverName: data['driverName'] as String?,
       driverPhone: data['driverPhone'] as String?,
-
-      pickup: RideLocation(
-        lat: (pickupData['lat'] as num?)?.toDouble() ?? 0,
-        lng: (pickupData['lng'] as num?)?.toDouble() ?? 0,
-        address: pickupData['address'] as String? ?? '',
-      ),
-
-      destination: RideLocation(
-        lat: (destinationData['lat'] as num?)?.toDouble() ?? 0,
-        lng: (destinationData['lng'] as num?)?.toDouble() ?? 0,
-        address: destinationData['address'] as String? ?? '',
-      ),
-
+      pickup: RideLocation.fromMap(pickupData),
+      destination: RideLocation.fromMap(destinationData),
       driverLocation:
-          driverLocationData == null
-              ? null
-              : RideLocation(
-                lat: (driverLocationData['lat'] as num?)?.toDouble() ?? 0,
-                lng: (driverLocationData['lng'] as num?)?.toDouble() ?? 0,
-                address: driverLocationData['address'] as String? ?? '',
-              ),
-
-      distanceKm: (data['distanceKm'] as num?)?.toDouble() ?? 0,
-
-      estimatedFare: (data['estimatedFare'] as num?)?.toDouble() ?? 0,
-
-      status: RideStatusX.fromValue(
-        data['status'] as String? ?? RideStatus.pending.value,
-      ),
-
+          driverLocationData != null
+              ? RideLocation.fromMap(driverLocationData)
+              : null,
+      distanceKm: (data['distanceKm'] as num?)?.toDouble() ?? 0.0,
+      estimatedFare: (data['estimatedFare'] as num?)?.toDouble() ?? 0.0,
+      status: RideStatus.fromValue(data['status'] as String?),
       rejectedDriverIds: List<String>.from(
         data['rejectedDriverIds'] ?? const [],
       ),
-
       createdAt: _timestampToDate(data['createdAt']),
       acceptedAt: _timestampToDate(data['acceptedAt']),
       completedAt: _timestampToDate(data['completedAt']),
@@ -102,43 +78,20 @@ class RideModel extends Ride {
       'riderId': riderId,
       'riderName': riderName,
       'riderPhone': riderPhone,
-
       'driverId': driverId,
       'driverName': driverName,
       'driverPhone': driverPhone,
-
-      'pickup': {
-        'lat': pickup.lat,
-        'lng': pickup.lng,
-        'address': pickup.address,
-      },
-
-      'destination': {
-        'lat': destination.lat,
-        'lng': destination.lng,
-        'address': destination.address,
-      },
-
-      'driverLocation':
-          driverLocation == null
-              ? null
-              : {
-                'lat': driverLocation!.lat,
-                'lng': driverLocation!.lng,
-                'address': driverLocation!.address,
-              },
-
+      'pickup': pickup.toMap(),
+      'destination': destination.toMap(),
+      'driverLocation': driverLocation?.toMap(),
       'distanceKm': distanceKm,
       'estimatedFare': estimatedFare,
-
       'status': status.value,
-
       'rejectedDriverIds': rejectedDriverIds,
-
       'createdAt': FieldValue.serverTimestamp(),
-
-      'acceptedAt': null,
-      'completedAt': null,
+      'acceptedAt': acceptedAt != null ? Timestamp.fromDate(acceptedAt!) : null,
+      'completedAt':
+          completedAt != null ? Timestamp.fromDate(completedAt!) : null,
     };
   }
 
@@ -146,11 +99,9 @@ class RideModel extends Ride {
     if (value is Timestamp) {
       return value.toDate();
     }
-
     if (value is DateTime) {
       return value;
     }
-
     return null;
   }
 }

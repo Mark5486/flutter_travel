@@ -6,7 +6,6 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/text_styles.dart';
 import '../../domain/entities/ride.dart';
 
-/// اللوحة اللي بتظهر تحت للسواق بعد ما يقبل رحلة، وفيها زرار "إنهاء الرحلة"
 class ActiveRidePanel extends StatelessWidget {
   final Ride ride;
   final bool isProcessing;

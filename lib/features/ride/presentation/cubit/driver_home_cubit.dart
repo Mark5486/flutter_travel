@@ -28,9 +28,11 @@ class DriverHomeCubit extends Cubit<DriverHomeState> {
   final LocationService locationService;
 
   final SetDriverAvailabilityUseCase setDriverAvailabilityUseCase;
+
   final UpdateDriverLocationUseCase updateDriverLocationUseCase;
 
   final WatchIncomingRequestsUseCase watchIncomingRequestsUseCase;
+
   final WatchActiveRideForDriverUseCase watchActiveRideForDriverUseCase;
 
   final AcceptRideUseCase acceptRideUseCase;
@@ -62,9 +64,20 @@ class DriverHomeCubit extends Cubit<DriverHomeState> {
     _listenToActiveRide();
   }
 
-  // ============================================================
-  // ONLINE / OFFLINE
-  // ============================================================
+  Future<void> loadDriverLocation() async {
+    try {
+      final position = await locationService.getCurrentPosition();
+
+      emit(
+        state.copyWith(
+          driverLocation: LatLng(position.latitude, position.longitude),
+          clearError: true,
+        ),
+      );
+    } catch (e) {
+      emit(state.copyWith(errorMessage: e.toString()));
+    }
+  }
 
   Future<void> toggleOnline(bool value) async {
     if (state.isProcessing) return;
@@ -80,29 +93,9 @@ class DriverHomeCubit extends Cubit<DriverHomeState> {
 
   Future<void> _goOnline() async {
     try {
-      print('========== GO ONLINE START ==========');
-
-      // ----------------------------------------------------------
-      // 1. GET CURRENT LOCATION
-      // ----------------------------------------------------------
-
-      print('1 - Getting current position...');
-
       final position = await locationService.getCurrentPosition();
 
       final driverLocation = LatLng(position.latitude, position.longitude);
-
-      print(
-        '2 - POSITION: '
-        '${position.latitude}, '
-        '${position.longitude}',
-      );
-
-      // ----------------------------------------------------------
-      // 2. SAVE AVAILABILITY
-      // ----------------------------------------------------------
-
-      print('3 - Calling setDriverAvailability...');
 
       final result = await setDriverAvailabilityUseCase(
         driverId: driverId,
@@ -112,58 +105,20 @@ class DriverHomeCubit extends Cubit<DriverHomeState> {
         lng: position.longitude,
       );
 
-      print('4 - setDriverAvailability returned');
+      result.fold(_emitFailure, (_) {
+        emit(
+          state.copyWith(
+            isOnline: true,
+            isProcessing: false,
+            driverLocation: driverLocation,
+            clearError: true,
+          ),
+        );
 
-      result.fold(
-        (failure) {
-          print(
-            '5 - AVAILABILITY FAILURE: '
-            '${failure.message}',
-          );
-
-          _emitFailure(failure);
-        },
-        (_) {
-          print('5 - AVAILABILITY SUCCESS');
-
-          // ------------------------------------------------------
-          // IMPORTANT:
-          // هنا بنحط موقع السواق في الـ STATE
-          // ------------------------------------------------------
-
-          emit(
-            state.copyWith(
-              isOnline: true,
-              isProcessing: false,
-              driverLocation: driverLocation,
-              clearError: true,
-            ),
-          );
-
-          // ------------------------------------------------------
-          // 3. LISTEN REQUESTS
-          // ------------------------------------------------------
-
-          print('6 - Listening to incoming requests...');
-
-          _listenToIncomingRequests();
-
-          // ------------------------------------------------------
-          // 4. LISTEN DRIVER LOCATION
-          // ------------------------------------------------------
-
-          print('7 - Listening to driver location...');
-
-          _listenToPosition();
-
-          print('========== GO ONLINE DONE ==========');
-        },
-      );
-    } catch (e, stackTrace) {
-      print('========== GO ONLINE EXCEPTION ==========');
-      print(e);
-      print(stackTrace);
-
+        _listenToIncomingRequests();
+        _listenToPosition();
+      });
+    } catch (e) {
       emit(state.copyWith(isProcessing: false, errorMessage: e.toString()));
     }
   }
@@ -197,10 +152,6 @@ class DriverHomeCubit extends Cubit<DriverHomeState> {
     }
   }
 
-  // ============================================================
-  // DRIVER LOCATION
-  // ============================================================
-
   void _listenToPosition() {
     _positionSub?.cancel();
 
@@ -208,21 +159,7 @@ class DriverHomeCubit extends Cubit<DriverHomeState> {
       (position) async {
         final driverLocation = LatLng(position.latitude, position.longitude);
 
-        print(
-          'DRIVER LOCATION UPDATE: '
-          '${position.latitude}, '
-          '${position.longitude}',
-        );
-
-        // --------------------------------------------------------
-        // UPDATE UI MAP
-        // --------------------------------------------------------
-
         emit(state.copyWith(driverLocation: driverLocation, clearError: true));
-
-        // --------------------------------------------------------
-        // UPDATE FIRESTORE
-        // --------------------------------------------------------
 
         final result = await updateDriverLocationUseCase(
           driverId: driverId,
@@ -238,23 +175,16 @@ class DriverHomeCubit extends Cubit<DriverHomeState> {
     );
   }
 
-  // ============================================================
-  // INCOMING REQUESTS
-  // ============================================================
-
   void _listenToIncomingRequests() {
     _incomingSub?.cancel();
 
     _incomingSub = watchIncomingRequestsUseCase(driverId).listen(
       (result) {
         result.fold(_emitFailure, (rides) {
-          if (state.activeRide != null) {
-            return;
-          }
+          if (state.activeRide != null) return;
 
           if (rides.isEmpty) {
             emit(state.copyWith(clearIncomingRequest: true));
-
             return;
           }
 
@@ -267,10 +197,6 @@ class DriverHomeCubit extends Cubit<DriverHomeState> {
     );
   }
 
-  // ============================================================
-  // ACTIVE RIDE
-  // ============================================================
-
   void _listenToActiveRide() {
     _activeRideSub?.cancel();
 
@@ -279,7 +205,6 @@ class DriverHomeCubit extends Cubit<DriverHomeState> {
         result.fold(_emitFailure, (ride) {
           if (ride == null) {
             emit(state.copyWith(clearActiveRide: true));
-
             return;
           }
 
@@ -290,6 +215,10 @@ class DriverHomeCubit extends Cubit<DriverHomeState> {
               clearError: true,
             ),
           );
+
+          if (!state.isOnline) {
+            _goOnline();
+          }
         });
       },
       onError: (error) {
@@ -297,10 +226,6 @@ class DriverHomeCubit extends Cubit<DriverHomeState> {
       },
     );
   }
-
-  // ============================================================
-  // ACCEPT
-  // ============================================================
 
   Future<void> acceptRequest(Ride ride) async {
     if (state.isProcessing) return;
@@ -325,10 +250,6 @@ class DriverHomeCubit extends Cubit<DriverHomeState> {
     });
   }
 
-  // ============================================================
-  // REJECT
-  // ============================================================
-
   Future<void> rejectRequest(Ride ride) async {
     if (state.isProcessing) return;
 
@@ -347,15 +268,10 @@ class DriverHomeCubit extends Cubit<DriverHomeState> {
     });
   }
 
-  // ============================================================
-  // ARRIVED
-  // ============================================================
-
   Future<void> markArrived() async {
     final ride = state.activeRide;
 
-    if (ride == null) return;
-    if (state.isProcessing) return;
+    if (ride == null || state.isProcessing) return;
 
     emit(state.copyWith(isProcessing: true, clearError: true));
 
@@ -366,15 +282,10 @@ class DriverHomeCubit extends Cubit<DriverHomeState> {
     });
   }
 
-  // ============================================================
-  // START TRIP
-  // ============================================================
-
   Future<void> startTrip() async {
     final ride = state.activeRide;
 
-    if (ride == null) return;
-    if (state.isProcessing) return;
+    if (ride == null || state.isProcessing) return;
 
     emit(state.copyWith(isProcessing: true, clearError: true));
 
@@ -385,36 +296,29 @@ class DriverHomeCubit extends Cubit<DriverHomeState> {
     });
   }
 
-  // ============================================================
-  // COMPLETE
-  // ============================================================
-
   Future<void> completeActiveRide() async {
     final ride = state.activeRide;
 
-    if (ride == null) return;
-    if (state.isProcessing) return;
+    if (ride == null || state.isProcessing) return;
 
     emit(state.copyWith(isProcessing: true, clearError: true));
 
     final result = await completeRideUseCase(ride.id);
 
     result.fold(_emitFailure, (_) {
-      emit(state.copyWith(isProcessing: false, clearError: true));
+      emit(
+        state.copyWith(
+          isProcessing: false,
+          clearActiveRide: true,
+          clearError: true,
+        ),
+      );
     });
   }
-
-  // ============================================================
-  // ERROR
-  // ============================================================
 
   void _emitFailure(Failure failure) {
     emit(state.copyWith(isProcessing: false, errorMessage: failure.message));
   }
-
-  // ============================================================
-  // CLOSE
-  // ============================================================
 
   @override
   Future<void> close() async {

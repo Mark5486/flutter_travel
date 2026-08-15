@@ -24,12 +24,16 @@ class PendingAction {
 
   factory PendingAction.fromJson(Map<String, dynamic> json) {
     return PendingAction(
-      id: json['id'] ?? '',
-      notificationId: json['notificationId'] ?? '',
+      id: json['id'] as String? ?? '',
+      notificationId: json['notificationId'] as String? ?? '',
       actionType: ActionType.values.firstWhere(
         (e) => e.name == json['actionType'],
+        orElse: () => ActionType.markAsRead,
       ),
-      createdAt: DateTime.parse(json['createdAt']),
+      createdAt:
+          json['createdAt'] != null
+              ? DateTime.tryParse(json['createdAt'] as String) ?? DateTime.now()
+              : DateTime.now(),
     );
   }
 }

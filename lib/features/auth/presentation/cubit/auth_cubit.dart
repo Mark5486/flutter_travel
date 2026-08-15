@@ -1,11 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 import '../../domain/entities/app_user.dart';
 import '../../domain/usecase/get_current_user_usecase.dart';
 import '../../domain/usecase/login_usecase.dart';
 import '../../domain/usecase/logout_usecase.dart';
 import '../../domain/usecase/register_usecase.dart';
-
 import 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
@@ -21,10 +19,6 @@ class AuthCubit extends Cubit<AuthState> {
     required this.getCurrentUserUseCase,
   }) : super(const AuthState());
 
-  //==========================
-  // Login
-  //==========================
-
   Future<void> login({required String email, required String password}) async {
     emit(state.copyWith(status: AuthStatus.loading));
 
@@ -35,10 +29,6 @@ class AuthCubit extends Cubit<AuthState> {
       (user) => _emitAuthenticated(user),
     );
   }
-
-  //==========================
-  // Register
-  //==========================
 
   Future<void> register({
     required String name,
@@ -63,10 +53,6 @@ class AuthCubit extends Cubit<AuthState> {
     );
   }
 
-  //==========================
-  // Current User
-  //==========================
-
   Future<void> getCurrentUser() async {
     emit(state.copyWith(status: AuthStatus.loading));
 
@@ -81,10 +67,6 @@ class AuthCubit extends Cubit<AuthState> {
     });
   }
 
-  //==========================
-  // Logout
-  //==========================
-
   Future<void> logout() async {
     emit(state.copyWith(status: AuthStatus.loading));
 
@@ -96,17 +78,9 @@ class AuthCubit extends Cubit<AuthState> {
     );
   }
 
-  //==========================
-  // Reset State
-  //==========================
-
   void resetState() {
     emit(state.copyWith(status: AuthStatus.initial, message: null));
   }
-
-  //==========================
-  // Helpers
-  //==========================
 
   void _emitAuthenticated(AppUser user) {
     emit(AuthState(status: AuthStatus.authenticated, user: user));

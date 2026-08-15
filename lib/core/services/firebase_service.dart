@@ -2,27 +2,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 abstract class FirebaseService {
-  // ==========================
-  // Firebase Instances
-  // ==========================
-
   FirebaseAuth get auth;
 
   FirebaseFirestore get firestore;
-
-  // ==========================
-  // Current User
-  // ==========================
 
   User? get currentUser;
 
   String? get currentUserId;
 
   bool get isLoggedIn;
-
-  // ==========================
-  // Authentication
-  // ==========================
 
   Future<UserCredential> signIn({
     required String email,
@@ -35,10 +23,6 @@ abstract class FirebaseService {
   });
 
   Future<void> signOut();
-
-  // ==========================
-  // Firestore
-  // ==========================
 
   CollectionReference<Map<String, dynamic>> collection(String path);
 
@@ -54,10 +38,6 @@ class FirebaseServiceImpl implements FirebaseService {
 
   const FirebaseServiceImpl({required this.auth, required this.firestore});
 
-  // ==========================
-  // Current User
-  // ==========================
-
   @override
   User? get currentUser => auth.currentUser;
 
@@ -66,10 +46,6 @@ class FirebaseServiceImpl implements FirebaseService {
 
   @override
   bool get isLoggedIn => currentUser != null;
-
-  // ==========================
-  // Authentication
-  // ==========================
 
   @override
   Future<UserCredential> signIn({
@@ -94,10 +70,6 @@ class FirebaseServiceImpl implements FirebaseService {
   Future<void> signOut() {
     return auth.signOut();
   }
-
-  // ==========================
-  // Firestore
-  // ==========================
 
   @override
   CollectionReference<Map<String, dynamic>> collection(String path) {

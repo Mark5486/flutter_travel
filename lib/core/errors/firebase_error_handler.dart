@@ -11,26 +11,40 @@ mixin FirebaseErrorHandler {
   ) async {
     try {
       final result = await action();
-
       return Right(result);
     } on AuthException catch (e) {
-      return Left(ServerFailure(e.message));
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(AuthFailure(e.message));
+    } on LocationException catch (e) {
+      return Left(LocationFailure(e.message));
+    } on PermissionException catch (e) {
+      return Left(PermissionFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
     } on CacheException catch (e) {
       return Left(CacheFailure(e.message));
-    } on NetworkException catch (e) {
+    } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } on FirebaseAuthException catch (e) {
-      return Left(ServerFailure(_mapAuthError(e.code)));
+      return Left(AuthFailure(_mapAuthError(e.code)));
     } on FirebaseException catch (e) {
-      return Left(
-        ServerFailure(e.message ?? 'حدث خطأ أثناء الاتصال بقاعدة البيانات.'),
-      );
+      return Left(ServerFailure(_mapFirebaseError(e)));
     } on FormatException {
       return const Left(ServerFailure('حدث خطأ أثناء معالجة البيانات.'));
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return const Left(ServerFailure('حدث خطأ غير متوقع، يرجى المحاولة لاحقاً.'));
+    }
+  }
+
+  String _mapFirebaseError(FirebaseException e) {
+    switch (e.code) {
+      case 'permission-denied':
+        return 'ليس لديك صلاحية للوصول إلى هذه البيانات.';
+      case 'unavailable':
+        return 'الخدمة غير متوفرة حالياً، تحقق من اتصالك بالإنترنت.';
+      case 'not-found':
+        return 'البيانات المطلوبة غير موجودة.';
+      default:
+        return e.message ?? 'حدث خطأ أثناء الاتصال بقاعدة البيانات.';
     }
   }
 
@@ -38,33 +52,24 @@ mixin FirebaseErrorHandler {
     switch (code) {
       case 'invalid-email':
         return 'البريد الإلكتروني غير صحيح.';
-
       case 'user-not-found':
         return 'لا يوجد حساب بهذا البريد الإلكتروني.';
-
       case 'wrong-password':
         return 'كلمة المرور غير صحيحة.';
-
       case 'email-already-in-use':
         return 'البريد الإلكتروني مستخدم بالفعل.';
-
       case 'weak-password':
-        return 'كلمة المرور ضعيفة.';
-
+        return 'كلمة المرور ضعيفة جداً.';
       case 'user-disabled':
         return 'تم تعطيل هذا الحساب.';
-
       case 'too-many-requests':
-        return 'عدد كبير من المحاولات، حاول لاحقًا.';
-
+        return 'عدد محاولات كثير، يرجى المحاولة لاحقاً.';
       case 'network-request-failed':
-        return 'تحقق من اتصال الإنترنت.';
-
+        return 'تحقق من الاتصال بالإنترنت.';
       case 'invalid-credential':
         return 'بيانات تسجيل الدخول غير صحيحة.';
-
       default:
-        return 'حدث خطأ غير متوقع.';
+        return 'حدث خطأ أثناء المصادقة.';
     }
   }
 }

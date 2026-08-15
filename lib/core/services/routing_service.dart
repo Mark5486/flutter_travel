@@ -1,8 +1,6 @@
 import 'dart:convert';
-
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
-
 import '../errors/exceptions.dart';
 
 abstract class RoutingService {
@@ -10,6 +8,10 @@ abstract class RoutingService {
 }
 
 class RoutingServiceImpl implements RoutingService {
+  final http.Client _client;
+
+  RoutingServiceImpl({http.Client? client}) : _client = client ?? http.Client();
+
   @override
   Future<List<LatLng>> getRoute({
     required LatLng start,
@@ -23,26 +25,25 @@ class RoutingServiceImpl implements RoutingService {
         '?overview=full&geometries=geojson',
       );
 
-      final response = await http.get(url);
+      final response = await _client.get(url);
 
       if (response.statusCode != 200) {
-        throw const ServerException('مقدرناش نحدد الطريق دلوقتي.');
+        throw const ServerException('تعذر تحديد المسار حالياً.');
       }
 
       final data = jsonDecode(response.body);
 
       if (data['code'] != 'Ok') {
-        throw const ServerException('مقدرناش نلاقي طريق بين المكانين.');
+        throw const ServerException('لم نتمكن من إيجاد طريق بين النقطتين.');
       }
 
-      final routes = data['routes'];
+      final routes = data['routes'] as List?;
 
       if (routes == null || routes.isEmpty) {
-        throw const ServerException('مفيش طريق متاح بين المكانين.');
+        throw const ServerException('لا يوجد طريق متاح بين هاتين النقطتين.');
       }
 
       final geometry = routes.first['geometry'];
-
       final coordinates = geometry['coordinates'] as List;
 
       return coordinates.map<LatLng>((point) {
@@ -51,12 +52,10 @@ class RoutingServiceImpl implements RoutingService {
           (point[0] as num).toDouble(),
         );
       }).toList();
-    } catch (e) {
-      if (e is ServerException) {
-        rethrow;
-      }
-
-      throw ServerException('حصل خطأ أثناء تحديد الطريق: ${e.toString()}');
+    } on ServerException {
+      rethrow;
+    } catch (_) {
+      throw const ServerException('حدث خطأ غير متوقع أثناء رسم المسار.');
     }
   }
 }

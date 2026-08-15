@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import '../../domain/entities/app_user.dart';
 
 class UserModel extends AppUser {
@@ -13,9 +12,6 @@ class UserModel extends AppUser {
     super.createdAt,
   });
 
-  ///=========================================
-  /// Entity -> Model
-  ///=========================================
   factory UserModel.fromEntity(AppUser user) {
     return UserModel(
       uid: user.uid,
@@ -28,9 +24,6 @@ class UserModel extends AppUser {
     );
   }
 
-  ///=========================================
-  /// Firestore -> Model
-  ///=========================================
   factory UserModel.fromFirestore(
     DocumentSnapshot<Map<String, dynamic>> document,
   ) {
@@ -47,9 +40,33 @@ class UserModel extends AppUser {
     );
   }
 
-  ///=========================================
-  /// Model -> Firestore
-  ///=========================================
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    return UserModel(
+      uid: json['uid'] ?? '',
+      name: json['name'] ?? '',
+      email: json['email'] ?? '',
+      phone: json['phone'] ?? '',
+      role: json['role'] ?? 'rider',
+      imageUrl: json['imageUrl'],
+      createdAt:
+          json['createdAt'] == null
+              ? null
+              : DateTime.tryParse(json['createdAt']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'uid': uid,
+      'name': name,
+      'email': email,
+      'phone': phone,
+      'role': role,
+      'imageUrl': imageUrl,
+      'createdAt': createdAt?.toIso8601String(),
+    };
+  }
+
   Map<String, dynamic> toFirestore() {
     return {
       'name': name,
@@ -64,9 +81,7 @@ class UserModel extends AppUser {
     };
   }
 
-  ///=========================================
-  /// copyWith
-  ///=========================================
+  @override
   UserModel copyWith({
     String? uid,
     String? name,
@@ -87,9 +102,6 @@ class UserModel extends AppUser {
     );
   }
 
-  ///=========================================
-  /// Model -> Entity
-  ///=========================================
   AppUser toEntity() {
     return AppUser(
       uid: uid,

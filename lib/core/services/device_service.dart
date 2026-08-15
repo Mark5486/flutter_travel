@@ -1,4 +1,3 @@
-// lib/core/services/device_service.dart
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 
@@ -14,11 +13,9 @@ class DeviceServiceImpl implements DeviceService {
     try {
       if (Platform.isAndroid) {
         final androidInfo = await _deviceInfo.androidInfo;
-        // id يمثل المعرف الفريد للهاتف في الأندرويد وهو مستقر ومضمون
         return androidInfo.id;
       } else if (Platform.isIOS) {
         final iosInfo = await _deviceInfo.iosInfo;
-        // identifierForVendor يمثل المعرف الفريد للمطور على الـ iOS
         return iosInfo.identifierForVendor ?? 'UNKNOWN_IOS_ID';
       }
       return 'UNKNOWN_PLATFORM_ID';

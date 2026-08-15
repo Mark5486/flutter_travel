@@ -1,9 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 
 extension FirebaseUserExtension on User {
-  String get uidValue => uid;
-
-  String get emailValue => email ?? '';
+  String get safeEmail => email ?? '';
 
   bool get isVerified => emailVerified;
 }

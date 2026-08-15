@@ -1,32 +1,33 @@
 abstract class AppException implements Exception {
   final String message;
+  final String? code;
 
-  const AppException(this.message);
+  const AppException(this.message, {this.code});
 
   @override
   String toString() => message;
 }
 
 class ServerException extends AppException {
-  const ServerException(super.message);
+  const ServerException(super.message, {super.code});
 }
 
 class AuthException extends AppException {
-  const AuthException(super.message);
+  const AuthException(super.message, {super.code});
 }
 
 class CacheException extends AppException {
-  const CacheException(super.message);
+  const CacheException(super.message, {super.code});
 }
 
 class NetworkException extends AppException {
-  const NetworkException(super.message);
-}
-
-class PermissionException extends AppException {
-  const PermissionException(super.message);
+  const NetworkException(super.message, {super.code});
 }
 
 class LocationException extends AppException {
-  const LocationException(super.message);
+  const LocationException(super.message, {super.code});
+}
+
+class PermissionException extends AppException {
+  const PermissionException(super.message, {super.code});
 }

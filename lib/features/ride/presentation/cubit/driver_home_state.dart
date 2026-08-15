@@ -10,7 +10,6 @@ class DriverHomeState extends Equatable {
   final Ride? incomingRequest;
   final Ride? activeRide;
 
-  /// موقع السواق الحالي على الخريطة
   final LatLng? driverLocation;
 
   final String? errorMessage;

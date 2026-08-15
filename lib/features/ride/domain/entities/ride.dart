@@ -49,6 +49,47 @@ class Ride extends Equatable {
     this.completedAt,
   });
 
+  Ride copyWith({
+    String? id,
+    String? riderId,
+    String? riderName,
+    String? riderPhone,
+    String? driverId,
+    String? driverName,
+    String? driverPhone,
+    RideLocation? pickup,
+    RideLocation? destination,
+    RideLocation? driverLocation,
+    double? distanceKm,
+    double? estimatedFare,
+    RideStatus? status,
+    List<String>? rejectedDriverIds,
+    DateTime? createdAt,
+    DateTime? acceptedAt,
+    DateTime? completedAt,
+  }) {
+    return Ride(
+      id: id ?? this.id,
+      riderId: riderId ?? this.riderId,
+      riderName: riderName ?? this.riderName,
+      riderPhone: riderPhone ?? this.riderPhone,
+      driverId: driverId ?? this.driverId,
+      driverName: driverName ?? this.driverName,
+      driverPhone: driverPhone ?? this.driverPhone,
+      pickup: pickup ?? this.pickup,
+      destination: destination ?? this.destination,
+      driverLocation: driverLocation ?? this.driverLocation,
+      distanceKm: distanceKm ?? this.distanceKm,
+      estimatedFare: estimatedFare ?? this.estimatedFare,
+      status: status ?? this.status,
+      rejectedDriverIds:
+          rejectedDriverIds ?? List.unmodifiable(this.rejectedDriverIds),
+      createdAt: createdAt ?? this.createdAt,
+      acceptedAt: acceptedAt ?? this.acceptedAt,
+      completedAt: completedAt ?? this.completedAt,
+    );
+  }
+
   @override
   List<Object?> get props => [
     id,

@@ -35,10 +35,6 @@ class ClientHomeCubit extends Cubit<ClientHomeState> {
     required this.cancelRideUseCase,
   }) : super(const ClientHomeState());
 
-  // ==========================================================
-  // CURRENT LOCATION
-  // ==========================================================
-
   Future<void> loadCurrentLocation() async {
     emit(state.copyWith(isLoadingLocation: true, clearError: true));
 
@@ -70,10 +66,6 @@ class ClientHomeCubit extends Cubit<ClientHomeState> {
     }
   }
 
-  // ==========================================================
-  // PICKUP
-  // ==========================================================
-
   void setPickup(RideLocation pickup) {
     emit(state.copyWith(pickup: pickup, clearError: true));
 
@@ -82,56 +74,19 @@ class ClientHomeCubit extends Cubit<ClientHomeState> {
     }
   }
 
-  // ==========================================================
-  // DESTINATION
-  // ==========================================================
-
   Future<void> selectDestinationFromMap(double lat, double lng) async {
     try {
       emit(state.copyWith(isSearchingDestination: true, clearError: true));
 
       final address = await locationService.getAddressFromCoordinates(lat, lng);
 
-      final destination = RideLocation(lat: lat, lng: lng, address: address);
+      final destination = RideLocation(
+        lat: lat,
+        lng: lng,
+        address: address ?? 'الموقع المحدد على الخريطة',
+      );
 
       _applyDestination(destination);
-    } catch (e) {
-      emit(
-        state.copyWith(
-          isSearchingDestination: false,
-          errorMessage: e.toString(),
-        ),
-      );
-    }
-  }
-
-  Future<void> searchDestination(String query) async {
-    if (query.trim().isEmpty) return;
-
-    try {
-      emit(state.copyWith(isSearchingDestination: true, clearError: true));
-
-      final coordinates = await locationService.getCoordinatesFromAddress(
-        query.trim(),
-      );
-
-      if (coordinates == null) {
-        emit(
-          state.copyWith(
-            isSearchingDestination: false,
-            errorMessage: 'معرفناش نلاقي المكان ده، جرب اسم تاني.',
-          ),
-        );
-        return;
-      }
-
-      _applyDestination(
-        RideLocation(
-          lat: coordinates.lat,
-          lng: coordinates.lng,
-          address: query.trim(),
-        ),
-      );
     } catch (e) {
       emit(
         state.copyWith(
@@ -186,10 +141,6 @@ class ClientHomeCubit extends Cubit<ClientHomeState> {
     emit(state.copyWith(clearDestination: true, clearError: true));
   }
 
-  // ==========================================================
-  // REQUEST RIDE
-  // ==========================================================
-
   Future<void> confirmRideRequest() async {
     final pickup = state.pickup;
     final destination = state.destination;
@@ -231,18 +182,26 @@ class ClientHomeCubit extends Cubit<ClientHomeState> {
     });
   }
 
-  // ==========================================================
-  // WATCH RIDE
-  // ==========================================================
-
   void _listenToRide(String rideId) {
     _rideSub?.cancel();
 
     _rideSub = watchRideUseCase(rideId).listen((result) {
       result.fold(_emitFailure, (ride) {
         if (ride == null) {
-          emit(state.copyWith(errorMessage: 'الرحلة لم تعد موجودة.'));
+          _rideSub?.cancel();
+
+          emit(
+            state.copyWith(
+              clearActiveRide: true,
+              errorMessage: 'الرحلة لم تعد موجودة.',
+            ),
+          );
+
           return;
+        }
+
+        if (ride.status.isCompleted || ride.status.isCancelled) {
+          _rideSub?.cancel();
         }
 
         emit(state.copyWith(activeRide: ride, clearError: true));
@@ -250,33 +209,36 @@ class ClientHomeCubit extends Cubit<ClientHomeState> {
     });
   }
 
-  // ==========================================================
-  // CANCEL
-  // ==========================================================
-
   Future<void> cancelActiveRide() async {
     final ride = state.activeRide;
 
-    if (ride == null) return;
+    if (ride == null) {
+      return;
+    }
+
+    emit(state.copyWith(isRequesting: true, clearError: true));
 
     final result = await cancelRideUseCase(ride.id);
 
-    result.fold(_emitFailure, (_) {});
-  }
+    result.fold(_emitFailure, (_) {
+      _rideSub?.cancel();
 
-  // ==========================================================
-  // FINISHED
-  // ==========================================================
+      emit(
+        state.copyWith(
+          isRequesting: false,
+          clearActiveRide: true,
+          clearDestination: true,
+          clearError: true,
+        ),
+      );
+    });
+  }
 
   void dismissFinishedRide() {
     _rideSub?.cancel();
 
     emit(ClientHomeState(pickup: state.pickup));
   }
-
-  // ==========================================================
-  // ERROR
-  // ==========================================================
 
   void _emitFailure(Failure failure) {
     emit(

@@ -25,10 +25,10 @@ class NetworkFailure extends Failure {
   const NetworkFailure(super.message);
 }
 
-class PermissionFailure extends Failure {
-  const PermissionFailure(super.message);
-}
-
 class LocationFailure extends Failure {
   const LocationFailure(super.message);
+}
+
+class PermissionFailure extends Failure {
+  const PermissionFailure(super.message);
 }

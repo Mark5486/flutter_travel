@@ -3,50 +3,54 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/constants/app_sizes.dart';
-import '../../../../core/di/core_locator.dart';
-
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 
-class SplashPage extends StatelessWidget {
+class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => getIt<AuthCubit>()..getCurrentUser(),
-      child: BlocListener<AuthCubit, AuthState>(
-        listener: (context, state) {
-          if (state.status == AuthStatus.authenticated) {
-            Navigator.pushReplacementNamed(context, AppRoutes.home);
-          }
-
-          if (state.status == AuthStatus.unauthenticated) {
-            Navigator.pushReplacementNamed(context, AppRoutes.login);
-          }
-        },
-        child: const _SplashBody(),
-      ),
-    );
-  }
+  State<SplashPage> createState() => _SplashPageState();
 }
 
-class _SplashBody extends StatelessWidget {
-  const _SplashBody();
+class _SplashPageState extends State<SplashPage> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<AuthCubit>().getCurrentUser();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            FlutterLogo(size: 90),
+    return BlocListener<AuthCubit, AuthState>(
+      listener: (context, state) {
+        if (state.status == AuthStatus.authenticated) {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.home,
+            (route) => false,
+          );
+        }
 
-            SizedBox(height: AppSizes.paddingLarge),
-
-            CircularProgressIndicator(),
-          ],
+        if (state.status == AuthStatus.unauthenticated ||
+            state.status == AuthStatus.failure) {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.login,
+            (route) => false,
+          );
+        }
+      },
+      child: const Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FlutterLogo(size: 90),
+              SizedBox(height: AppSizes.paddingLarge),
+              CircularProgressIndicator(),
+            ],
+          ),
         ),
       ),
     );
